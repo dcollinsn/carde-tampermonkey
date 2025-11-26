@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Cardev2 Purplefox Extract
 // @namespace    http://tampermonkey.net/
-// @version      2.0.1
+// @version      2.1.0
 // @description  Extract information about the current Carde.io v2 round, and format it for PurpleFox.
 // @author       Dan Collins <dcollins@batwing.tech>
 // @author       Aurélie Violette
@@ -143,8 +143,87 @@ async function doMenuCommandStandings(event) {
     GM_setClipboard(JSON.stringify(result));
 }
 
+function showNotification(message, type = 'success') {
+    // Create a temporary notification element
+    const notification = document.createElement('div');
+    notification.style.cssText = `
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 12px 20px;
+            background: ${type === 'error' ? '#f8d7da' : '#d4edda'};
+            color: ${type === 'error' ? '#721c24' : '#155724'};
+            border: 1px solid ${type === 'error' ? '#f5c6cb' : '#c3e6cb'};
+            border-radius: 4px;
+            font-family: Arial, sans-serif;
+            font-size: 14px;
+            z-index: 10000;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            transition: opacity 0.3s ease;
+        `;
+    notification.textContent = message;
+
+    document.body.appendChild(notification);
+
+    // Remove after 3 seconds
+    setTimeout(() => {
+        notification.style.opacity = '0';
+        setTimeout(() => {
+            if (notification.parentNode) {
+                notification.parentNode.removeChild(notification);
+            }
+        }, 300);
+    }, 3000);
+}
+
+async function openTournamentTools() {
+    console.log('Opening tournament tools...');
+
+    const [, eventId, roundId] =
+        window.location.pathname.match(
+            /\/events\/(\d+)\/(?:pairings|standings)\/round\/(\d+)/
+        ) || [];
+    const token = await getSessionToken();
+
+    if (!eventId) {
+        console.log('Could not find Event ID from current page URL');
+        showNotification('Could not find Event ID from current page URL', 'error');
+        return;
+    }
+
+    if (!token) {
+        console.log('Could not find Auth Token. Please make sure you are logged in.');
+        showNotification('Could not find Auth Token. Please make sure you are logged in.', 'error');
+        return;
+    }
+
+    const LAMBDA_URL = 'https://carde.dcollins.cc/';
+
+    // Use GET request with query parameters instead of POST form
+    const params = new URLSearchParams({
+        'eventId': eventId,
+        'token': token,
+        'tool': 'pairings_by_name',
+        'round': '1'
+    });
+
+    const url = `${LAMBDA_URL}?${params.toString()}`;
+    console.log('Opening URL:', url.replace(/token=[^&]*/, 'token=***'));
+
+    // Open in new tab
+    const newWindow = window.open(url, '_blank');
+
+    if (!newWindow) {
+        showNotification('Popup blocked. Please allow popups for this site.', 'error');
+        console.log('Popup was blocked');
+    } else {
+        console.log('Window opened successfully');
+    }
+}
+
 (function() {
     'use strict';
-    const menu_command_id = GM_registerMenuCommand("PurpleFox Export Results", doMenuCommandResults, "e");
-    const menu_command_id2 = GM_registerMenuCommand("PurpleFox Export Standings", doMenuCommandStandings, "r");
+    GM_registerMenuCommand("PurpleFox Export Results", doMenuCommandResults, "r");
+    GM_registerMenuCommand("PurpleFox Export Standings", doMenuCommandStandings, "s");
+    GM_registerMenuCommand('🚀 Open Tournament Tools', openTournamentTools, "p");
 })();
