@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Cardev2 Purplefox Extract
 // @namespace    http://tampermonkey.net/
-// @version      2.0.0
+// @version      2.0.1
 // @description  Extract information about the current Carde.io v2 round, and format it for PurpleFox.
 // @author       Dan Collins <dcollins@batwing.tech>
 // @author       Aurélie Violette
@@ -98,10 +98,7 @@ async function extractStandingsCarde() {
       /\/events\/(\d+)\/(?:pairings|standings)\/round\/(\d+)/
     ) || [];
   const url = `https://api.admin.carde.io/api/v2/organize/tournament-rounds/${roundId}/standings?avoid_cache=true&page=1&page_size=3000`;
-  let token;
-  const cookies = `; ${document.cookie}`;
-  const parts = cookies.split(`; web_sessionToken=`);
-  if (parts.length === 2) token = parts.pop().split(";").shift();
+  const token = await getSessionToken();
   const response = await fetch(url, {
     method: "GET",
     headers: {
