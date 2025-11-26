@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Cardev2 Purplefox Extract
 // @namespace    http://tampermonkey.net/
-// @version      1.0.0
+// @version      2.0.0
 // @description  Extract information about the current Carde.io v2 round, and format it for PurpleFox.
 // @author       Dan Collins <dcollins@batwing.tech>
 // @author       Aurélie Violette
@@ -13,16 +13,31 @@
 // @icon         https://admin.carde.io/favicon.ico
 // @grant        GM_registerMenuCommand
 // @grant        GM_setClipboard
+// @grant       GM_cookie
 // ==/UserScript==
+
+function getSessionToken() {
+  return new Promise((resolve, reject) => {
+    GM_cookie.list({ name: "web_sessionToken" }, (cookies, error) => {
+      if (error) {
+        console.error("Error reading web_sessionToken:", error);
+        reject(error);
+        return;
+      }
+      if (!cookies || cookies.length === 0) {
+        reject(new Error("web_sessionToken cookie not found"));
+        return;
+      }
+      resolve(cookies[0].value);
+    });
+  });
+}
 
 async function extractResultCarde() {
   const [, eventId, roundId] =
     window.location.pathname.match(/\/events\/(\d+)\/(?:pairings|standings)\/round\/(\d+)/) ||
     [];
-  let token;
-  const cookies = `; ${document.cookie}`;
-  const parts = cookies.split(`; web_sessionToken=`);
-  if (parts.length === 2) token = parts.pop().split(";").shift();
+  const token = await getSessionToken();
   const url = `https://api.admin.carde.io/api/v2/organize/tournament-rounds/${roundId}/matches-list/?round_id=${roundId}&avoid_cache=true&page=1&page_size=3000`;
   const response = await fetch(url, {
     method: "GET",
