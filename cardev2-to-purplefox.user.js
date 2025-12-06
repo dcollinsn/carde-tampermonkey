@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Cardev2 Purplefox Extract
 // @namespace    http://tampermonkey.net/
-// @version      2.1.0
+// @version      2.2.0
 // @description  Extract information about the current Carde.io v2 round, and format it for PurpleFox.
 // @author       Dan Collins <dcollins@batwing.tech>
 // @author       Aurélie Violette
@@ -35,8 +35,9 @@ function getSessionToken() {
 
 async function extractResultCarde() {
   const [, eventId, roundId] =
-    window.location.pathname.match(/\/events\/(\d+)\/(?:pairings|standings)\/round\/(\d+)/) ||
-    [];
+    window.location.pathname.match(
+      /\/events\/(\d+)\/(?:pairings|standings)\/round\/(\d+)/
+    ) || [];
   const token = await getSessionToken();
   const url = `https://api.admin.carde.io/api/v2/organize/tournament-rounds/${roundId}/matches-list/?round_id=${roundId}&avoid_cache=true&page=1&page_size=3000`;
   const response = await fetch(url, {
@@ -134,26 +135,28 @@ async function extractStandingsCarde() {
 }
 
 async function doMenuCommandResults(event) {
-    const result = await extractResultCarde();
-    GM_setClipboard(JSON.stringify(result));
+  const result = await extractResultCarde();
+  GM_setClipboard(JSON.stringify(result));
+  showNotification("Results copied to clipboard successfully!");
 }
 
 async function doMenuCommandStandings(event) {
-    const result = await extractStandingsCarde();
-    GM_setClipboard(JSON.stringify(result));
+  const result = await extractStandingsCarde();
+  GM_setClipboard(JSON.stringify(result));
+  showNotification("Standings copied to clipboard successfully!");
 }
 
-function showNotification(message, type = 'success') {
-    // Create a temporary notification element
-    const notification = document.createElement('div');
-    notification.style.cssText = `
+function showNotification(message, type = "success") {
+  // Create a temporary notification element
+  const notification = document.createElement("div");
+  notification.style.cssText = `
             position: fixed;
             top: 20px;
             right: 20px;
             padding: 12px 20px;
-            background: ${type === 'error' ? '#f8d7da' : '#d4edda'};
-            color: ${type === 'error' ? '#721c24' : '#155724'};
-            border: 1px solid ${type === 'error' ? '#f5c6cb' : '#c3e6cb'};
+            background: ${type === "error" ? "#f8d7da" : "#d4edda"};
+            color: ${type === "error" ? "#721c24" : "#155724"};
+            border: 1px solid ${type === "error" ? "#f5c6cb" : "#c3e6cb"};
             border-radius: 4px;
             font-family: Arial, sans-serif;
             font-size: 14px;
@@ -161,69 +164,81 @@ function showNotification(message, type = 'success') {
             box-shadow: 0 2px 10px rgba(0,0,0,0.1);
             transition: opacity 0.3s ease;
         `;
-    notification.textContent = message;
+  notification.textContent = message;
 
-    document.body.appendChild(notification);
+  document.body.appendChild(notification);
 
-    // Remove after 3 seconds
+  // Remove after 3 seconds
+  setTimeout(() => {
+    notification.style.opacity = "0";
     setTimeout(() => {
-        notification.style.opacity = '0';
-        setTimeout(() => {
-            if (notification.parentNode) {
-                notification.parentNode.removeChild(notification);
-            }
-        }, 300);
-    }, 3000);
+      if (notification.parentNode) {
+        notification.parentNode.removeChild(notification);
+      }
+    }, 300);
+  }, 3000);
 }
 
 async function openTournamentTools() {
-    console.log('Opening tournament tools...');
+  console.log("Opening tournament tools...");
 
-    const [, eventId, roundId] =
-        window.location.pathname.match(
-            /\/events\/(\d+)\/(?:pairings|standings)\/round\/(\d+)/
-        ) || [];
-    const token = await getSessionToken();
+  const [, eventId, roundId] =
+    window.location.pathname.match(
+      /\/events\/(\d+)\/(?:pairings|standings)\/round\/(\d+)/
+    ) || [];
+  const token = await getSessionToken();
 
-    if (!eventId) {
-        console.log('Could not find Event ID from current page URL');
-        showNotification('Could not find Event ID from current page URL', 'error');
-        return;
-    }
+  if (!eventId) {
+    console.log("Could not find Event ID from current page URL");
+    showNotification("Could not find Event ID from current page URL", "error");
+    return;
+  }
 
-    if (!token) {
-        console.log('Could not find Auth Token. Please make sure you are logged in.');
-        showNotification('Could not find Auth Token. Please make sure you are logged in.', 'error');
-        return;
-    }
+  if (!token) {
+    console.log(
+      "Could not find Auth Token. Please make sure you are logged in."
+    );
+    showNotification(
+      "Could not find Auth Token. Please make sure you are logged in.",
+      "error"
+    );
+    return;
+  }
 
-    const LAMBDA_URL = 'https://carde.dcollins.cc/';
+  const LAMBDA_URL = "https://carde.dcollins.cc/";
 
-    // Use GET request with query parameters instead of POST form
-    const params = new URLSearchParams({
-        'eventId': eventId,
-        'token': token,
-        'tool': 'pairings_by_name',
-        'round': '1'
-    });
+  // Use GET request with query parameters instead of POST form
+  const params = new URLSearchParams({
+    eventId: eventId,
+    token: token,
+    tool: "pairings_by_name",
+    round: "1",
+  });
 
-    const url = `${LAMBDA_URL}?${params.toString()}`;
-    console.log('Opening URL:', url.replace(/token=[^&]*/, 'token=***'));
+  const url = `${LAMBDA_URL}?${params.toString()}`;
+  console.log("Opening URL:", url.replace(/token=[^&]*/, "token=***"));
 
-    // Open in new tab
-    const newWindow = window.open(url, '_blank');
+  // Open in new tab
+  const newWindow = window.open(url, "_blank");
 
-    if (!newWindow) {
-        showNotification('Popup blocked. Please allow popups for this site.', 'error');
-        console.log('Popup was blocked');
-    } else {
-        console.log('Window opened successfully');
-    }
+  if (!newWindow) {
+    showNotification(
+      "Popup blocked. Please allow popups for this site.",
+      "error"
+    );
+    console.log("Popup was blocked");
+  } else {
+    console.log("Window opened successfully");
+  }
 }
 
-(function() {
-    'use strict';
-    GM_registerMenuCommand("PurpleFox Export Results", doMenuCommandResults, "r");
-    GM_registerMenuCommand("PurpleFox Export Standings", doMenuCommandStandings, "s");
-    GM_registerMenuCommand('🚀 Open Tournament Tools', openTournamentTools, "p");
+(function () {
+  "use strict";
+  GM_registerMenuCommand("PurpleFox Export Results", doMenuCommandResults, "r");
+  GM_registerMenuCommand(
+    "PurpleFox Export Standings",
+    doMenuCommandStandings,
+    "s"
+  );
+  GM_registerMenuCommand("🚀 Open Tournament Tools", openTournamentTools, "p");
 })();
