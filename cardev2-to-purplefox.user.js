@@ -1,13 +1,14 @@
 // ==UserScript==
 // @name         Cardev2 Purplefox Extract
 // @namespace    http://tampermonkey.net/
-// @version      2.2.0
+// @version      2.2.1
 // @description  Extract information about the current Carde.io v2 round, and format it for PurpleFox.
 // @author       Dan Collins <dcollins@batwing.tech>
 // @author       Aurélie Violette
 // @website      https://github.com/dcollinsn/carde-tampermonkey
 // @updateURL    https://raw.githubusercontent.com/dcollinsn/carde-tampermonkey/main/cardev2-to-purplefox.user.js
 // @downloadURL  https://raw.githubusercontent.com/dcollinsn/carde-tampermonkey/main/cardev2-to-purplefox.user.js
+// @match        https://admin.carde.io/admin/events/*
 // @match        https://admin.carde.io/admin/events/*/pairings/round/*
 // @match        https://admin.carde.io/admin/events/*/standings/round/*
 // @icon         https://admin.carde.io/favicon.ico
