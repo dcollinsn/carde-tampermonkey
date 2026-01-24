@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Carde Helper
 // @namespace    http://tampermonkey.net/
-// @version      1.0
+// @version      1.1
 // @description  Extract Event ID and Auth Token from Carde dashboard
 // @author       You
 // @match        https://dashboard.carde.io/events/*
@@ -175,4 +175,10 @@
     console.log('Carde Helper loaded');
     console.log('Event ID:', getEventId());
     console.log('Auth keys available:', Object.keys(localStorage).filter(key => key.includes('auth0')));
+    window.addEventListener('load', function() {
+        const h3 = document.querySelector('h3');
+        if (h3) {
+            document.title = h3.textContent;
+        }
+    });
 })();
